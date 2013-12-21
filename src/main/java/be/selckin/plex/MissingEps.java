@@ -2,37 +2,31 @@ package be.selckin.plex;
 
 import be.selckin.plex.CachedTvDB.Season;
 import be.selckin.plex.CachedTvDB.Show;
-import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import com.omertron.thetvdbapi.model.Episode;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import us.nineworlds.plex.rest.PlexappFactory;
-import us.nineworlds.plex.rest.config.impl.Configuration;
 import us.nineworlds.plex.rest.model.impl.Directory;
-import us.nineworlds.plex.rest.model.impl.MediaContainer;
 import us.nineworlds.plex.rest.model.impl.Video;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static be.selckin.plex.PlexUtils.filter;
 
 public class MissingEps {
 
     public static final Pattern SEASON_PATTERN = Pattern.compile("Season ([0-9]+)");
 
     public static void main(String[] args) throws Exception {
-        PlexappFactory plexapp = newPlexappFactory("192.168.0.233", 32400);
+        PlexappFactory plexapp = PlexUtils.newPlexappFactory("192.168.0.233", 32400);
         DB cache = newCache("pme.cache");
         CachedTvDB tvMeta = new CachedTvDB(args[0], cache);
 
@@ -46,7 +40,7 @@ public class MissingEps {
     }
 
     private static void findMissing(PlexappFactory plexapp, CachedTvDB tvMeta) throws Exception {
-        for (String key : findShowKeys(plexapp)) {
+        for (String key : PlexUtils.findShowKeys(plexapp)) {
             for (Directory showDir : plexapp.retrieveSections(key, "all").getDirectories()) {
 
                 Optional<Show> showOptional = tvMeta.find(showDir.getTitle());
@@ -107,33 +101,5 @@ public class MissingEps {
                 .transactionDisable()
                 .make();
     }
-
-
-    private static PlexappFactory newPlexappFactory(String host, int port) {
-        Configuration config = new Configuration();
-        config.setHost(host);
-        config.setPort(Integer.toString(port));
-        return PlexappFactory.getInstance(config);
-    }
-
-    private static Iterable<Directory> filter(MediaContainer mediaContainer, final String type) throws Exception {
-        return Iterables.filter(mediaContainer.getDirectories(), new Predicate<Directory>() {
-            @Override
-            public boolean apply(Directory directory) {
-                return type.equals(directory.getType());
-            }
-        });
-    }
-
-    private static List<String> findShowKeys(PlexappFactory plexapp) throws Exception {
-        return FluentIterable.from(filter(plexapp.retrieveSections(), "show")).transform(new Function<Directory, String>() {
-            @Override
-            public String apply(Directory directory) {
-                return directory.getKey();
-            }
-        }).toList();
-
-    }
-
 
 }
