@@ -79,8 +79,12 @@ public class CachedTvDB {
             public boolean apply(Episode input) {
                 return input.getSeasonNumber() != 0;
             }
+        }).filter(new Predicate<Episode>() {
+            @Override
+            public boolean apply(Episode input) {
+                return input.getEpisodeNumber() != 0;
+            }
         });
-        ImmutableList<Episode> list = episodes.toList();
         return new Show(series.getSeriesName(), from(episodes.index(new Function<Episode, Integer>() {
             @Override
             public Integer apply(Episode episode) {
